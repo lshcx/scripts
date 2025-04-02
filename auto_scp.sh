@@ -69,7 +69,7 @@ fi
 # Start file transfer
 echo "Starting file transfer..."
 
-# Choose between scp and rsync based on partial transfer option
+# Choose between scp and rsync based on resume transfer option
 if [ "$RESUME" = true ]; then
     # Using rsync with resume capability
     RSYNC_OPTS="-r -P"  # -r for recursive, -P for partial and progress
@@ -77,11 +77,17 @@ if [ "$RESUME" = true ]; then
     # Build SSH command for rsync
     SSH_CMD="ssh -i $KEY_PATH"
     
+    # Fix path handling difference between scp and rsync
+    # If source path ends with a slash, remove it to maintain scp-like behavior
+    SRC_FOR_RSYNC="${SRC%/}"
+    
     # Execute rsync command
-    rsync $RSYNC_OPTS --rsh="$SSH_CMD" "$SRC" $USER@$IP:"$DST"
+    echo "Using rsync for resume transfer..."
+    rsync $RSYNC_OPTS --rsh="$SSH_CMD" "$SRC_FOR_RSYNC" $USER@$IP:"$DST"
     TRANSFER_STATUS=$?
 else
     # Using traditional scp
+    echo "Using scp for file transfer..."
     scp -r -c aes192-ctr -i "$KEY_PATH" "$SRC" $USER@$IP:"$DST"
     TRANSFER_STATUS=$?
 fi
